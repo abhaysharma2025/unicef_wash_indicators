@@ -1,0 +1,407 @@
+---
+title: "Global Sanitation Gaps: Household vs. Healthcare Facilities"
+format:
+  html:
+    page-layout: full
+    embed-resources: true
+    code-fold: true
+    theme: 
+      light: cosmo
+      dark: cyborg
+    toc: false
+    toc-depth: 3
+    smooth-scroll: true
+    link-external-newwindow: true
+    title-block-banner: true
+
+jupyter: python3
+
+---
+
+## Introduction
+
+Access to basic sanitation is a human right — yet far too many healthcare facilities and communities around the world still lack it, with devastating consequences.
+
+Millions of people globally do not have access to safe drinking-water, sanitation and hygiene (WASH) services and consequently suffer from or are exposed to a multitude of preventable illnesses. Unsafe WASH is associated with infectious diseases, health risks from exposure to chemicals and other contaminants in drinking-water, as well as impacts on well-being. WHO estimates the burden of disease attributable to unsafe WASH for key health outcomes and report on SDG indicator 3.9.2.
+
+::: {.callout-warning title="The Human Cost of Unsafe Sanitation (2019)"}
+
+::: {.columns}
+
+::: {.column width="50%"}
+
+- **1.4 million deaths** could have been prevented with safe WASH services.
+- **74 million DALYs** could have been prevented with safe WASH.
+- **69%** of all diarrhoea deaths were due to unsafe WASH.
+
+:::
+
+::: {.column width="50%"}
+
+- Over **1 million deaths** from diarrhoea linked to unsafe WASH.
+- **356,000 deaths** from acute respiratory infections due to poor hand hygiene.
+
+:::
+
+:::
+
+:::
+
+
+These are not just statistics — they represent preventable tragedies affecting millions of families worldwide.
+
+This report focuses on two critical indicators:
+
+
+- **Indicator I:** *Proportion of Health Care Facilities with Basic Sanitation Services *
+- **Indicator I:** *Proportion of Population Using On-Site Sanitation Facilities with Human Waste Disposed In Situ*
+
+These indicators do not simply measure infrastructure gaps — they reflect urgent, life-threatening inequalities that compromise health, safety, and dignity. By shedding light on these realities, UNICEF calls for stronger global action to ensure that every person, everywhere, has access to safe, dignified, and sustainable sanitation.
+
+A healthier future starts with the basics — and the time to act is now.
+
+## 🌍 Global Overview
+
+```{python}
+import pandas as pd, numpy as np, matplotlib.pyplot as plt, seaborn as sns, plotly.express as px, geopandas as gpd
+
+indicator1 = pd.read_csv("unicef_indicator_1.csv")
+indicator2 = pd.read_csv("unicef_indicator_2.csv")
+metadata = pd.read_csv("unicef_metadata.csv")
+
+
+# Step 2: Get the latest year data for each country
+latest1 = indicator1.sort_values('time_period').groupby('country', as_index=False).last()
+latest1 = latest1[latest1['obs_value'] != 0]
+# Step 3: Plot the world map
+fig1 = px.choropleth(
+    latest1,
+    locations="alpha_3_code",            # ISO Alpha-3 country code
+    color="obs_value",                   # Indicator value
+    hover_name="country",                # Country name on hover
+    color_continuous_scale="YlGnBu",      # Color scale
+    title="Indicator I: Proportion of Health Care Facilities with Basic Sanitation Services (Latest Year)",
+    labels={'obs_value': 'Indicator I'},
+)
+
+fig1.update_layout(
+    geo=dict(showframe=False, showcoastlines=True),
+    coloraxis_colorbar=dict(title="Proportion of Facilities")
+)
+
+
+```
+> The map highlights that many countries, especially in Africa and parts of Asia, have a low proportion of healthcare facilities with basic sanitation services. This lack of sanitation infrastructure in hospitals and clinics is concerning because it directly affects the quality of healthcare and increases the risk of disease transmission, even in places where household sanitation might be somewhat better.
+
+```{python}
+
+# Latest value per country
+
+latest2  = indicator2.sort_values('time_period').groupby('country', as_index=False).last()
+latest2 = latest2[latest2['obs_value'] != 0]
+# World Map
+fig2= px.choropleth(
+    latest2,
+    locations="alpha_3_code",
+    color="obs_value",
+    hover_name="country",
+    color_continuous_scale="YlGnBu",
+    title="Indictor II: Proportion of Population Using On-Site Sanitation Facilities with Human Waste Disposed In Situ (Latest Year)",
+    labels={'obs_value': 'Indicator II'}
+)
+
+fig2.update_layout(
+    geo=dict(showframe=False, showcoastlines=True),
+    coloraxis_colorbar=dict(title="Proportion of Population")
+
+)
+
+
+```
+
+>The map shows that a significant proportion of the population in countries like India, Bangladesh, and parts of Africa and South America rely on on-site sanitation facilities where waste is disposed of in situ. This indicates that many people in these regions do not have access to centralized sewage systems and depend on localized waste management, which can pose health and environmental risks if not properly maintained.
+
+
+## Top and Bottom Performers for Sanitation Indicators
+
+We further explore the global disparities by identifying the **top 10** and **bottom 10** countries for each sanitation indicator based on the latest available data. The charts below provide a clearer picture of which countries are leading and lagging in access to basic sanitation services.
+
+### Indicator 1: Health Care Facilities with Basic Sanitation Services
+```{python}
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+
+# Best 10 performers
+top10_indicator1 = latest1.nlargest(10, 'obs_value')
+
+# Worst 10 performers
+bottom10_indicator1 = latest1.nsmallest(10, 'obs_value')
+
+# Create side-by-side subplot
+fig_indicator1 = make_subplots(
+    rows=1, cols=2,
+    subplot_titles=("Top 10 Countries", "Bottom 10 Countries"),
+    horizontal_spacing=0.2
+)
+
+# Top 10 Bar
+fig_indicator1.add_trace(
+    go.Bar(
+        y=top10_indicator1['obs_value'],
+        x=top10_indicator1['alpha_3_code'],
+        orientation='v',
+        marker=dict(color=top10_indicator1['obs_value'], colorscale='YlGnBu'),
+        name="Top 10"
+    ),
+    row=1, col=1
+)
+
+# Bottom 10 Bar
+fig_indicator1.add_trace(
+    go.Bar(
+        y=bottom10_indicator1['obs_value'],
+        x=bottom10_indicator1['alpha_3_code'],
+        orientation='v',
+        marker=dict(color=bottom10_indicator1['obs_value'], colorscale='YlGnBu'),
+        name="Bottom 10"
+    ),
+    row=1, col=2
+)
+
+fig_indicator1.update_layout(
+    height=500,
+    showlegend=False
+)
+
+fig_indicator1.show()
+```
+
+### Indicator 2: Population Using On-Site Sanitation with In Situ Disposal
+
+```{python}
+# Best 10 performers
+top10_indicator2 = latest2.nlargest(10, 'obs_value')
+
+# Worst 10 performers
+bottom10_indicator2 = latest2.nsmallest(10, 'obs_value')
+
+# Create side-by-side subplot
+fig_indicator2 = make_subplots(
+    rows=1, cols=2,
+    subplot_titles=("Top 10 Countries", "Bottom 10 Countries"),
+    horizontal_spacing=0.2
+)
+
+# Top 10 Bar
+fig_indicator2.add_trace(
+    go.Bar(
+        y=top10_indicator2['obs_value'],
+        x=top10_indicator2['alpha_3_code'],
+        orientation='v',
+        marker=dict(color=top10_indicator2['obs_value'], colorscale='YlGnBu'),
+        name="Top 10"
+    ),
+    row=1, col=1
+)
+
+# Bottom 10 Bar
+fig_indicator2.add_trace(
+    go.Bar(
+        y=bottom10_indicator2['obs_value'],
+        x=bottom10_indicator2['alpha_3_code'],
+        orientation='v',
+        marker=dict(color=bottom10_indicator2['obs_value'], colorscale='YlGnBu'),
+        name="Bottom 10"
+    ),
+    row=1, col=2
+)
+
+fig_indicator2.update_layout(
+    height=500,
+    showlegend=False
+)
+
+fig_indicator2.show()
+
+```
+
+# Countries with the Sharpest Rise in Sanitation Indicators
+While overall global progress in sanitation has been uneven, some countries have made remarkable improvements over time. To highlight these success stories, we identified the top 10 countries that showed the sharpest increase in each of the two sanitation indicators. By comparing the earliest and latest available data for each country, we selected those with the greatest positive change.
+
+The following time series plots illustrate how these countries have advanced, showcasing encouraging trends in expanding access to basic sanitation services in healthcare facilities and improving household sanitation systems.
+```{python}
+import pandas as pd
+import plotly.express as px
+
+# --- Load data ---
+indicator1 = pd.read_csv("unicef_indicator_1.csv")
+indicator2 = pd.read_csv("unicef_indicator_2.csv")
+
+# --- Remove zero values (optional) ---
+indicator1 = indicator1[indicator1['obs_value'] != 0]
+indicator2 = indicator2[indicator2['obs_value'] != 0]
+
+# --- Calculate the "rise" for each country ---
+
+# For Indicator 1
+change1 = (
+    indicator1.groupby('country')
+    .agg(first_value=('obs_value', 'first'), last_value=('obs_value', 'last'))
+)
+change1['rise'] = change1['last_value'] - change1['first_value']
+top10_rise_1 = change1.sort_values('rise', ascending=False).head(10).index.tolist()
+
+# For Indicator 2
+change2 = (
+    indicator2.groupby('country')
+    .agg(first_value=('obs_value', 'first'), last_value=('obs_value', 'last'))
+)
+change2['rise'] = change2['last_value'] - change2['first_value']
+top10_rise_2 = change2.sort_values('rise', ascending=False).head(10).index.tolist()
+
+# --- Filter the main datasets to only top 10 countries ---
+
+indicator1_top10 = indicator1[indicator1['country'].isin(top10_rise_1)]
+indicator2_top10 = indicator2[indicator2['country'].isin(top10_rise_2)]
+
+# --- Plot Indicator 1 ---
+fig1 = px.line(
+    indicator1_top10,
+    x='time_period', y='obs_value', color='country',
+    title='Top 10 Countries with Sharpest Rise - Indicator 1 (Health Facilities with Basic Sanitation)',
+    labels={'time_period': 'Year', 'obs_value': 'Proportion (%)'}
+)
+fig1.update_layout(height=700)
+fig1.show()
+
+# --- Plot Indicator 2 ---
+fig2 = px.line(
+    indicator2_top10,
+    x='time_period', y='obs_value', color='country',
+    title='Top 10 Countries with Sharpest Rise - Indicator 2 (Population Using On-Site Sanitation)',
+    labels={'time_period': 'Year', 'obs_value': 'Proportion (%)'}
+)
+fig2.update_layout(height=700)
+fig2.show()
+
+```
+
+*In a world of diverse healthcare sanitation levels, stories of triumph and challenge emerge. Estonia, Kuwait, Qatar, Saudi Arabia, Singapore, Macedonia, Oman, and Tokelau consistently achieve 100% sanitation, exemplifying excellence. In contrast, Kenya and Palau struggle with low sanitation, highlighting the need for targeted interventions. Nigeria and Sierra Leone show promising growth, climbing from low beginnings to significant improvements. Azerbaijan and Armenia maintain mid-range stability but aim for universal coverage. Ethiopia's sudden drop from 59.25% to 39.03% underscores the fragility of progress. Afghanistan and the Central African Republic face ongoing challenges, calling for focused efforts. These narratives reflect the global pursuit of universal healthcare sanitation, a vital goal for public health.*
+
+
+# Associations Between Development and Sanitation Indicators
+
+We analyzed the relationship between sanitation access and key development metrics, including GDP per capita, life expectancy, hospital bed availability, and fossil fuel energy consumption. The analysis reveals that higher GDP per capita, greater life expectancy, and higher military expenditure are associated with improved basic sanitation services in health care facilities. Conversely, higher birth rates may be linked to poorer sanitation in such facilities. Regarding the use of on-site sanitation facilities, lower GDP per capita and shorter life expectancy correlate with greater reliance on these systems, suggesting a transition towards centralized sewer systems as countries develop economically. Overall, economic wealth, health infrastructure, and demographic factors emerge as key drivers influencing sanitation outcomes.
+```{python}
+# --- Step 1: Preprocessing ---
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Load datasets
+# your two indicators
+
+# Clean development indicators
+dev_df = metadata.rename(columns={
+    'year': 'time_period',
+    'Population, total': 'population_total',
+    'GDP per capita (constant 2015 US$)': 'gdp_per_capita',
+    'GNI (current US$)': 'gni_current',
+    'Life expectancy at birth, total (years)': 'life_expectancy',
+    'Hospital beds (per 1,000 people)': 'hospital_beds',
+    'GDP growth (annual %)': 'gdp_growth',
+    'Birth rate, crude (per 1,000 people)': 'birth_rate',
+    'Military expenditure (% of GDP)': 'military_expenditure',
+    'Fossil fuel energy consumption (% of total)': 'fossil_fuel_consumption',
+    'Inflation, consumer prices (annual %)': 'inflation'
+})
+
+# Force numeric
+for col in ['population_total', 'gdp_per_capita', 'gni_current', 'life_expectancy',
+            'hospital_beds', 'gdp_growth', 'birth_rate', 'military_expenditure',
+            'fossil_fuel_consumption', 'inflation']:
+    dev_df[col] = pd.to_numeric(dev_df[col], errors='coerce')
+
+# Clean sanitation indicators
+
+indicator1 = indicator1.rename(columns={
+    'obs_value': 'indicator_1'
+})
+indicator2 = indicator2.rename(columns={
+    'obs_value': 'indicator_2'})
+
+# If needed: pivot sanitation data to have indicator_1, indicator_2 as columns
+
+# --- Step 2: Merge Datasets ---
+merged_df = pd.merge(dev_df, indicator1, on=['country', 'time_period'], how='inner')
+
+merged_df2= pd.merge(dev_df, indicator2, on=['country', 'time_period'], how='inner')
+
+correlation_cols = [
+    'population_total', 'gdp_per_capita', 'gni_current', 'life_expectancy',
+    'hospital_beds', 'gdp_growth', 'birth_rate', 'military_expenditure',
+    'fossil_fuel_consumption', 'inflation',
+    'indicator_1'
+]
+correlation_cols2= [
+    'population_total', 'gdp_per_capita', 'gni_current', 'life_expectancy',
+    'hospital_beds', 'gdp_growth', 'birth_rate', 'military_expenditure',
+    'fossil_fuel_consumption', 'inflation',
+    'indicator_2'
+]
+
+corr_matrix = merged_df[correlation_cols].corr()
+
+corr_matrix2= merged_df2[correlation_cols2].corr()
+
+
+# Focus only on how other indicators relate to sanitation indicators
+sanitation_corr = corr_matrix[['indicator_1']].drop(index=['indicator_1'])
+sanitation_corr2 = corr_matrix2[['indicator_2']].drop(index=['indicator_2'])
+
+# --- Step 4: Visualization ---
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 6))
+
+sns.heatmap(sanitation_corr, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, ax=ax1)
+ax1.set_title("Correlation of Development Indicators with Sanitation Indicators (1)")
+
+sns.heatmap(sanitation_corr2, annot=True, cmap="coolwarm", fmt=".2f", linewidths=0.5, ax=ax2)
+ax2.set_title("Correlation of Development Indicators with Sanitation Indicators (2)")
+
+plt.tight_layout()
+plt.show()
+
+```
+
+
+
+# Scatterplots for some relationships with Indicator 1 
+```{python}
+# --- Scatterplots for strong relationships with Indicator 1 ---
+
+strong_vars = ['gdp_per_capita', 'life_expectancy', 'military_expenditure', 'fossil_fuel_consumption', 'birth_rate']
+
+fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+axes = axes.flatten()
+
+for i, var in enumerate(strong_vars):
+    sns.scatterplot(data=merged_df, x=var, y='indicator_1', ax=axes[i])
+    axes[i].set_title(f"{var} vs. Indicator 1")
+    axes[i].set_xlabel(var.replace("_", " ").title())
+    axes[i].set_ylabel("Sanitation Indicator 1")
+
+# Remove empty subplot (since 5 plots but 6 subplots)
+fig.delaxes(axes[-1])
+
+plt.tight_layout()
+plt.show()
+
+```
+
+# Conclusion
+
+The UNICEF WASH Indicators track basic sanitation services, like clean water, safe toilets, and proper waste disposal. This is crucial for preventing disease, ensuring patient safety, and supporting healthcare workers. By monitoring this, we can identify gaps and push for better, healthier facilities worldwide. It's a simple yet powerful way to improve global healthcare standards.
+
+The analysis of global sanitation patterns reveals a critical gap between household-level sanitation and healthcare facility services. While many populations continue to rely on basic on-site sanitation, a concerning number of healthcare facilities still lack even basic sanitation infrastructure. Addressing both aspects is essential to improving public health, preventing disease, and achieving sustainable development goals related to health, hygiene, and sanitation.
